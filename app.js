@@ -1,4 +1,5 @@
 function createCalc(){
+
     let newCalc = document.createElement('div');
     newCalc.classList.add('calc');
 
@@ -16,7 +17,8 @@ function createCalc(){
 }
 
 function createKeypad() {
-    let keys = ['7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '', '+', '='];
+
+    let keys = ['7', '8', '9', '/', '4', '5', '6', '*', '1', '2', '3', '-', '0', '.', '', '+', '=','', 'c', 'b'];
 
     let keypad = document.createElement('div');
     keypad.classList.add('keypad');
@@ -40,8 +42,9 @@ function createKeypad() {
 }
 
 function buttonPress(key) {
+    
     let display = document.querySelector('.display');
-    console.log(calculator);
+
     switch (key) {
 
         case '0':
@@ -53,101 +56,124 @@ function buttonPress(key) {
         case '6':
         case '7':
         case '8':
-        case '9':
-            if (display.innerText == '0' || isNaN(display.innerText)) display.innerText = '';
+        case '9': 
         case '.':
-            display.innerText = display.innerText + key;
-            console.log(key)
+            
+            if ('action' in calculator) {
+
+                if ('secondNumber'  in calculator) {
+                    calculator.secondNumber += key;
+                } else {
+                    calculator.secondNumber = key
+                }
+
+                display.innerText = calculator.secondNumber;
+            } else {
+
+                if ('firstNumber' in calculator) {
+                    calculator.firstNumber += key;
+                } else {
+                    calculator.firstNumber = key;
+                }
+                display.innerText = calculator.firstNumber;
+            }
             break;
 
         case '/':
         case '*':
         case '-':
         case '+':
-            
-            if (!calculator.firstNumber) {
-                calculator.firstNumber = display.innerText;
-            } else if (!calculator.secondNumber) {
-                calculator.secondNumber = display.innerText;
-                calculate();
-                calculator.firstNumber = display.innerText;
+            if ('action', 'secondNumber' in calculator) {
+                calculator.firstNumber = calculate();
+                display.innerText = calculator.firstNumber;
+                calculator.action = key;
+                break;
             }
-            display.innerText = '';
-            calculator.action = key;
+
+            if ('firstNumber' in calculator) {
+                calculator.action = key;
+                break;
+            }
+
+            if (!isNaN(parseFloat(display.innerText))) {
+                calculator.firstNumber = parseFloat(display.innerText);
+                calculator.action = key;
+            }
+
             break;
+
         case '=':
-            calculator.secondNumber = display.innerText;
-            calculate();
+            if ('action', 'firstNumber', 'secondNumber' in calculator) {
+                display.innerText = calculate();
+            }
             break;
+        
+        case 'c':
+            clear();
 
+        case 'b':
+            backspace();
     }
+}
 
+function clear() {
+
+    document.querySelector('.display').innerText = '';
+
+    delete calculator.firstNumber;
+    delete calculator.secondNumber;
+    delete calculator.action;
+}
+
+function backspace() {
+
+    let display = document.querySelector('.display').textContent;
+    if (display != '') {
+        display = display.slice(0, display.length -1);
+        document.querySelector('.display').textContent = display;
+
+        if ('secondNumber' in calculator) {
+            calculator.secondNumber = display;
+        } else {
+            calculator.firstNumber = display;
+        }
+    }
 }
 
 function calculate() {
-    if (calculator.firstNumber && calculator.secondNumber && calculator.action) {
 
-        let result = 'ERROR';
-        console.log(calculator);
+    let result = undefined;
 
-        switch (calculator.action) {
-            case '+':
-                result = add(calculator.firstNumber, calculator.secondNumber)
-        }
+    if ('action', 'firstNumber', 'secondNumber' in calculator) {
 
-        document.querySelector('.display').innerText = result;
+        result = operate (calculator.firstNumber, calculator.secondNumber, calculator.action);
 
-        delete calculator.firstNumber;
-        delete calculator.secondNumber;
-        delete calculator.action;
-    }
-}
+        clear();
 
-function display(message) {
-    document.querySelector('.display').innerText = message;
-}
-
-function add(a, b) {
-    return a*1 + b*1;
-}
-
-function substract(a, b) {
-    return a*1 - b*1;
-}
-
-function multiply(a, b) {
-    return a * b;
-}
-
-function divide(a, b) {
-    return a / b;
-}
-
-function operate(a, b, operator) {
-
-    let result = 'NULL';
-
-    switch(operator) {
-        case '+':
-            result = add(a, b);
-            break;
-
-        case '-':
-            result = substract(a, b);
-            break;
-
-        case '*':
-            result = multiply(a, b);
-            break;
-
-        case '/':
-            result = divide(a, b);
-            break;
+        result = Math.round(result*1000000)/1000000;
     }
 
     return result;
 }
 
+function operate(a, b, operator) {
+
+    switch(operator) {
+        case '+':
+            return a*1 + b*1;
+
+        case '-':
+            return a*1 - b*1;;
+
+        case '*':
+            return a * b;
+
+        case '/':
+            return a / b;
+    }
+
+    return undefined;
+}
+
 let calculator = {};
 createCalc();
-display('0');
